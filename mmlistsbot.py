@@ -65,17 +65,18 @@ def list_all(update, context):
     lists_msg = ''
     list_count = 0
     for l in lists_dict:
-        lists_msg += '<b>' + l['name'] + '</b>' + '\n'
-        lists_msg += l['description'] + '\n'
-        #lists_msg += l['link'] +'\n \n'    
-        lists_msg += '\n'
-        list_count += 1
-        if list_count > 4:
+        current_list = '<b>' + l['name'] + '</b>' + '\n'
+        current_list += l['description'] + '\n \n'
+        if (len(current_list) + len(lists_msg)) < 4096:
+            lists_msg += current_list
+            list_count += 1
+        else:
             update.message.reply_text(lists_msg,
                   parse_mode=ParseMode.HTML) 
             lists_msg = ''
+            lists_msg +=  current_list
             list_count = 0
-    if len(lists_msg) > 0:
+    if list_count > 0:
         update.message.reply_text(lists_msg,
                   parse_mode=ParseMode.HTML)
 
@@ -83,6 +84,7 @@ def get_mm(update, context):
     """ Get specific list """
     try:
         # args[0] should contain the time for the timer in seconds
+        logger.error(str(len(context.args)))
         lists_url = "http://miralosmorserver.pythonanywhere.com/api/movielists-mm"
         lists_req = requests.get(lists_url)
         lists_dict = lists_req.json()
@@ -102,6 +104,32 @@ def get_mm(update, context):
 
         update.message.reply_text(text=mm_msg, 
                   parse_mode=ParseMode.HTML)
+        
+        #Send movies
+        movie_msg = ''
+        movie_count = 0
+        current_movie = ''
+        for movie in mm_dict['movies']:
+            current_movie = '<b>' + movie['name'] + '</b> (' + movie['year'] + ') - imdb: '+ movie['imdb_id'] +'\n'
+            current_movie += 'Directed by ' + movie['director'] + '\n'
+            if len(movie['details']) > 0:
+                current_movie += 'a.k.a ' + movie['details'] + '\n' + '\n'
+            else:
+                current_movie += '\n'
+            if (len(current_movie) + len(movie_msg)) < 4096:
+                movie_msg += current_movie
+                movie_count += 1
+            else:
+                update.message.reply_text(movie_msg,
+                  parse_mode=ParseMode.HTML) 
+                movie_msg = ''
+                movie_msg +=  current_movie
+                movie_count = 0
+        if movie_count > 0:
+            update.message.reply_text(movie_msg,
+                    parse_mode=ParseMode.HTML)
+
+
 
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /MM <numero>')
@@ -119,6 +147,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("aiuuda", show_help))
+    dp.add_handler(CommandHandler("help", show_help))
     dp.add_handler(CommandHandler("listar_todas", list_all))
     dp.add_handler(CommandHandler("MM", get_mm,
                                   pass_args=True,
