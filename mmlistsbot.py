@@ -134,6 +134,56 @@ def get_mm(update, context):
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /MM <numero>')
 
+    def get_name(update, context):
+    """ Get specific list """
+    try:
+        # args[0] should contain the time for the timer in seconds
+        movies_url = "http://miralosmorserver.pythonanywhere.com/api/movie/search_name/"
+        for i in range(0, len(context.args)):
+            movies_url += context.args[i]
+            if i < len(context.args)-1:
+                movies_url += '-'
+        
+        movies_url += '_mm'
+
+        movie_req = requests.get(lmovies_url)
+        movie_dict = movie_req.json()
+
+        mm_msg = '<b>' + mm_dict['name'] + '</b>' + '  ' + mm_dict['description'] + '\n'
+        mm_msg += mm_dict['link']
+
+        update.message.reply_text(text=mm_msg, 
+                  parse_mode=ParseMode.HTML)
+        
+        #Send movies
+        movie_msg = ''
+        movie_count = 0
+        current_movie = ''
+        for movie in mm_dict['movies']:
+            current_movie = '<b>' + movie['name'] + '</b> (' + movie['year'] + ') - imdb: '+ movie['imdb_id'] +'\n'
+            current_movie += 'Directed by ' + movie['director'] + '\n'
+            if len(movie['details']) > 0:
+                current_movie += 'a.k.a ' + movie['details'] + '\n' + '\n'
+            else:
+                current_movie += '\n'
+            if (len(current_movie) + len(movie_msg)) < 4096:
+                movie_msg += current_movie
+                movie_count += 1
+            else:
+                update.message.reply_text(movie_msg,
+                  parse_mode=ParseMode.HTML) 
+                movie_msg = ''
+                movie_msg +=  current_movie
+                movie_count = 0
+        if movie_count > 0:
+            update.message.reply_text(movie_msg,
+                    parse_mode=ParseMode.HTML)
+
+
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /MM <numero>')
+
 def main():
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
@@ -150,6 +200,9 @@ def main():
     dp.add_handler(CommandHandler("help", show_help))
     dp.add_handler(CommandHandler("listar_todas", list_all))
     dp.add_handler(CommandHandler("MM", get_mm,
+                                  pass_args=True,
+                                  pass_chat_data=True))
+    dp.add_handler(CommandHandler("buscar_pelicula", get_name,
                                   pass_args=True,
                                   pass_chat_data=True))
 
