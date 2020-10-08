@@ -55,7 +55,11 @@ def show_help(update, context):
     """Send a message when the command /start is issued."""
     help_msg = "Usá los siguientes comandos para comunicarte conmigo:\n"
     help_msg += "/listar_todas para ver todas las listas disponibles \n"
-    help_msg += "/MM 'nro' para ver una lista en particular con sus películas, por ejemplo: /MM 15"
+    help_msg += "/MM 'nro' para ver una lista en particular con sus películas, por ejemplo: /MM 15 \n"
+    help_msg += "/pelicula 'palabras' buscar las películas cuyo nombre contenga las palabras indicadas, por ejemplo /pelicula pussycat kill \n"
+    help_msg += "/director 'palabras' buscar las películas cuyo director contenga en su nombre las palabras indicadas, por ejemplo "
+    help_msg += "/director Russ Meyer"
+
     update.message.reply_text(help_msg)
 
 def list_all(update, context):
@@ -113,7 +117,7 @@ def get_mm(update, context):
             current_movie = '<b>' + movie['name'] + '</b> (' + movie['year'] + ') - imdb: '+ movie['imdb_id'] +'\n'
             current_movie += 'Directed by ' + movie['director'] + '\n'
             if len(movie['details']) > 0:
-                current_movie += 'a.k.a ' + movie['details'] + '\n' + '\n'
+                current_movie += movie['details'] + '\n' + '\n'
             else:
                 current_movie += '\n'
             if (len(current_movie) + len(movie_msg)) < 4096:
@@ -134,24 +138,33 @@ def get_mm(update, context):
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /MM <numero>')
 
-    def get_name(update, context):
+def get_name(update, context):
     """ Get specific list """
     try:
         # args[0] should contain the time for the timer in seconds
+        key_w = ''
         movies_url = "http://miralosmorserver.pythonanywhere.com/api/movie/search_name/"
+        if len(context.args) < 1:
+            update.message.reply_text(text='poné una palabra al menos', 
+                  parse_mode=ParseMode.HTML)
+            return
         for i in range(0, len(context.args)):
             movies_url += context.args[i]
+            key_w += context.args[i] + ' '
             if i < len(context.args)-1:
                 movies_url += '-'
         
         movies_url += '_mm'
 
-        movie_req = requests.get(lmovies_url)
+        movie_req = requests.get(movies_url)
         movie_dict = movie_req.json()
 
-        mm_msg = '<b>' + mm_dict['name'] + '</b>' + '  ' + mm_dict['description'] + '\n'
-        mm_msg += mm_dict['link']
+        if len(movie_dict) == 0:
+            update.message.reply_text(text="no se encontraron películas con esas palabras", 
+                  parse_mode=ParseMode.HTML)
+            return
 
+        mm_msg = 'Películas cuyo nombre contiene <b>' + key_w + '</b>: \n'
         update.message.reply_text(text=mm_msg, 
                   parse_mode=ParseMode.HTML)
         
@@ -159,13 +172,74 @@ def get_mm(update, context):
         movie_msg = ''
         movie_count = 0
         current_movie = ''
-        for movie in mm_dict['movies']:
-            current_movie = '<b>' + movie['name'] + '</b> (' + movie['year'] + ') - imdb: '+ movie['imdb_id'] +'\n'
-            current_movie += 'Directed by ' + movie['director'] + '\n'
-            if len(movie['details']) > 0:
-                current_movie += 'a.k.a ' + movie['details'] + '\n' + '\n'
+        for movie in movie_dict:
+            current_movie = '<b>' + movie['movie_name'] + '</b> (' + movie['movie_year'] + ')\n'
+            current_movie += 'Directed by ' + movie['movie_director'] + '\n'
+            if len(movie['movie_detail']) > 0:
+                current_movie += movie['movie_detail'] + '\n' 
+            for l in movie['movie_lists'].split(','):
+                current_movie += l + '\n'
+
+            if (len(current_movie) + len(movie_msg)) < 4096:
+                movie_msg += current_movie
+                movie_count += 1
             else:
-                current_movie += '\n'
+                update.message.reply_text(movie_msg,
+                  parse_mode=ParseMode.HTML) 
+                movie_msg = ''
+                movie_msg +=  current_movie
+                movie_count = 0
+        if movie_count > 0:
+            update.message.reply_text(movie_msg,
+                    parse_mode=ParseMode.HTML)
+
+
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /MM <numero>')
+
+def get_director(update, context):
+    """ Get specific list """
+    try:
+        # args[0] should contain the time for the timer in seconds
+        key_w = ''
+        movies_url = "http://miralosmorserver.pythonanywhere.com/api/movie/search_director/"
+        if len(context.args) < 1:
+            update.message.reply_text(text='poné una palabra al menos', 
+                  parse_mode=ParseMode.HTML)
+            return
+        for i in range(0, len(context.args)):
+            movies_url += context.args[i]
+            key_w += context.args[i] + ' '
+            if i < len(context.args)-1:
+                movies_url += '-'
+        
+        movies_url += '_mm'
+
+        movie_req = requests.get(movies_url)
+        movie_dict = movie_req.json()
+
+        if len(movie_dict) == 0:
+            update.message.reply_text(text="no se encontraron directores con esas palabras", 
+                  parse_mode=ParseMode.HTML)
+            return
+                
+        mm_msg = 'Películas cuyo director contiene <b>' + key_w + '</b>: \n'
+        update.message.reply_text(text=mm_msg, 
+                  parse_mode=ParseMode.HTML)
+        
+        #Send movies
+        movie_msg = ''
+        movie_count = 0
+        current_movie = ''
+        for movie in movie_dict:
+            current_movie = '<b>' + movie['movie_name'] + '</b> (' + movie['movie_year'] + ')\n'
+            current_movie += 'Directed by ' + movie['movie_director'] + '\n'
+            if len(movie['movie_detail']) > 0:
+                current_movie += movie['movie_detail'] + '\n' 
+            for l in movie['movie_lists'].split(','):
+                current_movie += l + '\n'
+
             if (len(current_movie) + len(movie_msg)) < 4096:
                 movie_msg += current_movie
                 movie_count += 1
@@ -202,7 +276,10 @@ def main():
     dp.add_handler(CommandHandler("MM", get_mm,
                                   pass_args=True,
                                   pass_chat_data=True))
-    dp.add_handler(CommandHandler("buscar_pelicula", get_name,
+    dp.add_handler(CommandHandler("pelicula", get_name,
+                                  pass_args=True,
+                                  pass_chat_data=True))
+    dp.add_handler(CommandHandler("director", get_director,
                                   pass_args=True,
                                   pass_chat_data=True))
 
