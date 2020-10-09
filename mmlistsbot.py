@@ -70,11 +70,11 @@ def list_all(update, context):
     list_count = 0
     for l in lists_dict:
         list_name = l['name'].split(' - ')[0]
-        if len(l['ext_link']) > 0:
+        if len(l['ext_link']) > 2:
             list_name_url = "<a href=\""+ l['ext_link'] +" \">" + list_name + "</a>"
         else:
             list_name_url = list_name
-        current_list = '<b>' + list_name_url + '</b>' + '(' + l['name'].split(' - ')[1] + ')\n'
+        current_list = '<b>' + list_name_url + '</b>' + ' (' + l['name'].split(' - ')[1] + ')\n'
         current_list += l['description'] + '\n \n'
         if (len(current_list) + len(lists_msg)) < 4096:
             lists_msg += current_list
@@ -110,7 +110,10 @@ def get_mm(update, context):
         mm_dict = mm_req.json()[0]
 
         mm_msg = '<b>' + mm_dict['name'] + '</b>' + '  ' + mm_dict['description'] + '\n'
-        mm_msg += mm_dict['link']
+        mm_msg += mm_dict['link'] + '\n'
+        if len(mm_dict['ext_link']) > 2:
+            mm_msg += "Lo podés leer <a href=\""+ mm_dict['ext_link'] +" \">" + "acá</a> \n"
+         
 
         update.message.reply_text(text=mm_msg, 
                   parse_mode=ParseMode.HTML)
