@@ -69,26 +69,32 @@ def list_all(update, context):
     lists_msg = ''
     list_count = 0
     for l in lists_dict:
-        current_list = '<b>' + l['name'] + '</b>' + '\n'
+        list_name = l['name'].split(' - ')[0]
+        if len(l['ext_link']) > 0:
+            list_name_url = "<a href=\""+ l['ext_link'] +" \">" + list_name + "</a>"
+        else:
+            list_name_url = list_name
+        current_list = '<b>' + list_name_url + '</b>' + '(' + l['name'].split(' - ')[1] + ')\n'
         current_list += l['description'] + '\n \n'
         if (len(current_list) + len(lists_msg)) < 4096:
             lists_msg += current_list
             list_count += 1
         else:
             update.message.reply_text(lists_msg,
-                  parse_mode=ParseMode.HTML) 
+                  parse_mode=ParseMode.HTML,
+                  disable_web_page_preview=True) 
             lists_msg = ''
             lists_msg +=  current_list
             list_count = 0
     if list_count > 0:
         update.message.reply_text(lists_msg,
-                  parse_mode=ParseMode.HTML)
+                  parse_mode=ParseMode.HTML,
+                  disable_web_page_preview=True)
 
 def get_mm(update, context):
     """ Get specific list """
     try:
         # args[0] should contain the time for the timer in seconds
-        logger.error(str(len(context.args)))
         lists_url = "http://miralosmorserver.pythonanywhere.com/api/movielists-mm"
         lists_req = requests.get(lists_url)
         lists_dict = lists_req.json()
