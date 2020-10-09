@@ -74,7 +74,7 @@ def list_all(update, context):
             list_name_url = "<a href=\""+ l['ext_link'] +" \">" + list_name + "</a>"
         else:
             list_name_url = list_name
-        current_list = '<b>' + list_name_url + '</b>' + ' (' + l['name'].split(' - ')[1] + ')\n'
+        current_list = '<b>' + list_name_url + '</b> ' + '  (' + l['name'].split(' - ')[1] + ')\n'
         current_list += l['description'] + '\n \n'
         if (len(current_list) + len(lists_msg)) < 4096:
             lists_msg += current_list
