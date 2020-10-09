@@ -252,8 +252,11 @@ def get_director(update, context):
             current_movie += 'Directed by ' + movie['movie_director'] + '\n'
             if len(movie['movie_detail']) > 0:
                 current_movie += movie['movie_detail'] + '\n' 
-            for l in movie['movie_lists'].split(','):
-                current_movie += l + '\n'
+            list_links = movie['movie_lists_links'].split(',')
+            list_names = movie['movie_lists'].split(',')
+            #for l in movie['movie_lists'].split(','):
+            for i in range(0, len(list_names)):
+                current_movie += "<a href=\""+ list_links[i] +" \">" + list_names[i] +"</a> \n"
 
             if (len(current_movie) + len(movie_msg)) < 4096:
                 movie_msg += current_movie
