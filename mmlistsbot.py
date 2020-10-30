@@ -272,7 +272,6 @@ def get_director(update, context):
                     parse_mode=ParseMode.HTML)
 
 
-
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /MM <numero>')
 
